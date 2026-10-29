@@ -36,7 +36,7 @@ const homePath = getRelativeLocaleUrl(locale, "");
   >
     <section id="hero" class="border-border border-b pt-8 pb-6">
       <h1 class="my-4 inline-block text-4xl font-bold sm:my-8 sm:text-5xl">
-        kazyamaz200 の技術ブログ
+        {config.site.title}
       </h1>
       <a
         target="_blank"
@@ -53,8 +53,9 @@ const homePath = getRelativeLocaleUrl(locale, "");
         <span class="sr-only">RSS Feed</span>
       </a>
 
-      <p>技術と開発の学びを記録する個人ブログです。</p>
-      <p class="mt-2">主なテーマ: ソフトウェア開発、コーディングエージェント、RDAD。</p>
+      <p class="text-lg">{config.site.tagline}</p>
+      <p class="mt-2">{config.site.description}</p>
+      <p class="mt-2">主なテーマ: ソフトウェア、AIエージェント、インフラ、技術探索。RDAD もその一つとして扱います。</p>
       {
         socials.length > 0 && (
           <div class="mt-4 flex max-sm:flex-col sm:items-center">

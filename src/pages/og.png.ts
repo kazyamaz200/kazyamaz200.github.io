@@ -106,7 +106,7 @@ export const GET: APIRoute = async context => {
                             type: "p",
                             props: {
                               style: { fontSize: 28 },
-                              children: config.site.description,
+                              children: config.site.tagline ?? config.site.description,
                             },
                           },
                         ],

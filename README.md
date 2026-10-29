@@ -1,4 +1,10 @@
-# kazyamaz200 の技術ブログ
+# Boundary Notes
+
+Engineering at the Boundaries.
+
+ソフトウェア、AIエージェント、インフラ、技術探索の実践と試行錯誤を記録する個人技術ブログ。
+
+URL: https://kazyamaz200.github.io/ — Theme: AstroPaper。RDAD はブログで扱う主要な技術テーマの一つです。
 
 AstroPaper v6.0.0 を基にした Astro の静的ブログです。設計と受入条件は [RFC](docs/rfc.md)、[予備設計](docs/design.md)、[実装計画](docs/plan.md) を参照してください。RDAD の一次資料は [RDAD.md](https://gist.github.com/kazyamaz200/94595a2045a9562b9c804c17780fede9) です。
 

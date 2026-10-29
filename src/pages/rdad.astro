@@ -3,10 +3,12 @@ import Layout from "@/layouts/Layout.astro";
 import Header from "@/components/Header.astro";
 import Main from "@/components/Main.astro";
 import Footer from "@/components/Footer.astro";
+import config from "@/config";
 ---
-<Layout title="RDAD | kazyamaz200 の技術ブログ">
+<Layout title={`RDAD | ${config.site.title}`}>
   <Header />
   <Main pageTitle="RDAD" class="app-prose">
+    <p>RDAD は、Boundary Notes で扱う主要な技術テーマの一つです。</p>
     <p>RFC-Driven Agentic Development（RDAD）は、RFC を起点に、コーディングエージェントが設計・実装・検証を進めるための開発原則です。必要十分な実装とリスクに応じた検証によって、要求された振る舞いを完成させます。</p>
     <h2>開発フロー</h2>
     <p>RFC → 予備設計・Contract Gate → 実装計画 → 実装と段階的検証 → 統合・受入検証 → 根拠に基づく完了。Tracking Issue で一貫して追跡します。</p>

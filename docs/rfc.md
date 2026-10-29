@@ -1,9 +1,13 @@
-# RFC: 個人技術ブログ
+# RFC: Boundary Notes
 
-状態: 提案・実装中（公開は承認待ち）
+状態: 記事0本で初回公開済み。正式名称は Boundary Notes。
 
 ## 目的と読者
-技術的な学びと RDAD を継続的に記録し、ソフトウェア開発者やコーディングエージェントの利用者に届ける。
+Engineering at the Boundaries.
+
+ソフトウェア、AIエージェント、インフラ、技術探索の実践と試行錯誤を記録する個人技術ブログ。RDAD は Boundary Notes の主要な技術テーマの一つであり、ブログ全体の名称ではない。
+
+URL は https://kazyamaz200.github.io/、テーマは AstroPaper。サイト設定を正本とし、ナビゲーション・ページタイトル・メタデータ・OGP・RSS に名称と説明を共用する。タグラインはホームと標準の OG 画像に表示し、AstroPaper のミニマルな構成を維持する。
 
 ## 範囲
 Home、記事一覧・タグ・検索、RDAD、Projects、RSS、サイトマップを静的に提供する。Markdown / MDX を記事の正本とし、AstroPaper 標準のテーマ、検索、ダークモード、レスポンシブ表示を使う。記事はレビュー後に公開する。
