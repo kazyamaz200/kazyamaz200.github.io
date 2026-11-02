@@ -1,0 +1,16 @@
+/* Boundary Notes colors on the standard giscus theme. */
+@import url("https://giscus.app/themes/dark_dimmed.css");
+
+main {
+  --color-fg-default: #eaedf3;
+  --color-canvas-default: #212737;
+  --color-canvas-overlay: #212737;
+  --color-canvas-inset: #212737;
+  --color-canvas-subtle: #343f60;
+  --color-border-default: #ab4b08;
+  --color-accent-fg: #ff6b01;
+  --color-accent-emphasis: #ff6b01;
+  --color-btn-primary-bg: #ff6b01;
+  --color-btn-primary-hover-bg: #ff6b01;
+  --color-btn-primary-text: #212737;
+}

@@ -1,0 +1,32 @@
+---
+import config from "@/config";
+const themeBase = new URL("giscus/", config.site.url).href;
+---
+
+<section
+  id="comments"
+  aria-labelledby="comments-heading"
+  class="border-border mt-10 mb-8 min-w-0 border-t border-dashed pt-8"
+  data-pagefind-ignore
+>
+  <h2 id="comments-heading" class="text-accent mb-3 text-xl font-semibold">
+    リアクション・コメント
+  </h2>
+  <p class="text-muted-foreground mb-5 text-sm leading-relaxed">
+    記事への感想やご質問をお寄せください。投稿・リアクションにはGitHubでのログインが必要です。
+  </p>
+  <boundary-giscus data-theme-base={themeBase} class="block min-w-0">
+    <div class="giscus min-w-0"></div>
+  </boundary-giscus>
+  <p class="text-muted-foreground mt-4 text-sm">
+    表示されない場合は、<a
+      class="hover:text-accent underline underline-offset-4"
+      href="https://github.com/kazyamaz200/kazyamaz200.github.io/discussions/categories/announcements"
+      >GitHub Discussions</a
+    >からもご覧いただけます。
+  </p>
+</section>
+
+<script>
+  import "@/scripts/giscus";
+</script>
