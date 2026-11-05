@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="660" viewBox="0 0 1200 660" role="img" aria-labelledby="title desc">
+<title id="title">現実とMinecraftを結ぶ空間参照の構想</title>
+<desc id="desc">現実の緯度経度標高と空間ID、元データを、全国地形・詳細地形・PLATEAU都市の異なる解像度のワールドへ関連付け、将来は現実の装置とのイベント連携にも拡張する概念図。</desc>
+<rect width="1200" height="660" rx="26" fill="#f7fafc"/>
+<text x="600" y="47" font-family="Noto Sans CJK JP, sans-serif" font-size="27" font-weight="700" text-anchor="middle" fill="#102a43">「同じ場所」を、異なる表現で参照する</text>
+<text x="600" y="79" font-family="Noto Sans CJK JP, sans-serif" font-size="15" text-anchor="middle" fill="#526d82">位置を識別する仕組みと、世界を描画する仕組みを分けて考える</text>
+<rect x="260" y="108" width="680" height="106" rx="16" fill="#e3f4fb" stroke="#62b5d6" stroke-width="2"/>
+<text x="600" y="144" font-family="Noto Sans CJK JP, sans-serif" font-size="25" font-weight="700" text-anchor="middle" fill="#073e5a">現実の地理空間</text>
+<text x="600" y="172" font-family="Noto Sans CJK JP, sans-serif" font-size="17" text-anchor="middle" fill="#234d65">緯度・経度・標高 ／ 空間ID ／ 元データ・時点</text>
+<text x="600" y="197" font-family="Noto Sans CJK JP, sans-serif" font-size="14" text-anchor="middle" fill="#436b7d">同じ位置を参照するための共通の手がかり</text>
+<path d="M600 215 V257" fill="none" stroke="#3c95b6" stroke-width="4" stroke-linecap="round"/>
+<path d="M590 246 L600 260 L610 246" fill="none" stroke="#3c95b6" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="745" y="246" font-family="Noto Sans CJK JP, sans-serif" font-size="14" fill="#3d6478">座標変換・縮尺・来歴</text>
+<path d="M210 276 H990" fill="none" stroke="#85a4b4" stroke-width="3"/>
+<path d="M210 276 V303 M600 276 V303 M990 276 V303" fill="none" stroke="#85a4b4" stroke-width="3"/>
+<g font-family="Noto Sans CJK JP, sans-serif" text-anchor="middle">
+ <rect x="44" y="303" width="332" height="154" rx="16" fill="#ffffff" stroke="#b7cbd8" stroke-width="2"/>
+ <text x="210" y="340" font-size="22" font-weight="700" fill="#103b57">全国地形</text>
+ <text x="210" y="371" font-size="16" fill="#476578">水平：空間ID z18に対応</text>
+ <text x="210" y="397" font-size="16" fill="#476578">高さ：128m/ブロック</text>
+ <text x="210" y="429" font-size="15" fill="#2689aa">広域を見渡す</text>
+ <rect x="434" y="303" width="332" height="154" rx="16" fill="#ffffff" stroke="#b7cbd8" stroke-width="2"/>
+ <text x="600" y="340" font-size="22" font-weight="700" fill="#103b57">詳細地形</text>
+ <text x="600" y="371" font-size="16" fill="#476578">高さ：8m・16m刻み</text>
+ <text x="600" y="397" font-size="16" fill="#476578">山・川・島・海岸</text>
+ <text x="600" y="429" font-size="15" fill="#2689aa">地形を観察・体験する</text>
+ <rect x="824" y="303" width="332" height="154" rx="16" fill="#ffffff" stroke="#b7cbd8" stroke-width="2"/>
+ <text x="990" y="340" font-size="22" font-weight="700" fill="#103b57">都市（PLATEAU）</text>
+ <text x="990" y="371" font-size="16" fill="#476578">CityGML → ブロック</text>
+ <text x="990" y="397" font-size="16" fill="#476578">約1m/ブロックの表現</text>
+ <text x="990" y="429" font-size="15" fill="#2689aa">街並みを歩く</text>
+</g>
+<path d="M600 465 V507" fill="none" stroke="#3c95b6" stroke-width="4" stroke-linecap="round"/>
+<path d="M590 496 L600 510 L610 496" fill="none" stroke="#3c95b6" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="230" y="516" width="740" height="74" rx="14" fill="#eaf5ef" stroke="#6ab59c" stroke-width="2"/>
+<text x="600" y="542" font-family="Noto Sans CJK JP, sans-serif" font-size="21" font-weight="700" text-anchor="middle" fill="#215a46">Minecraftのワールド間移動・位置照合</text>
+<text x="600" y="568" font-family="Noto Sans CJK JP, sans-serif" font-size="16" text-anchor="middle" fill="#3d705b">ワールドID ＋ 座標 ＋ 参照する現実の場所</text>
+<text x="600" y="632" font-family="Noto Sans CJK JP, sans-serif" font-size="15" text-anchor="middle" fill="#637b88">将来構想：現実の設置物とのイベント連動（権限・安全制御が別途必要）</text>
+</svg>
