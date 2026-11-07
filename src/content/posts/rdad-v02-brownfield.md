@@ -13,7 +13,7 @@ ogImage: "https://kazyamaz200.github.io/og.png"
 
 長年の改修によって、複数のコンポーネントがつながり、仕様書に載っていない前提や、テストにだけ残っている約束ごとが増えている。そこへAIコーディングエージェントを投入しても、「要求どおりのコードを書けた」だけでは終わらない。
 
-以前、AIに開発を任せる中で経験した過剰実装や統合テストの手戻りから、[RFC-Driven Agentic Development（RDAD）](https://gist.github.com/kazyamaz200/94595a2045a9562b9c804c17780fede9)という開発原則を考えた。
+以前、AIに開発を任せる中で経験した過剰実装や統合テストの手戻りから、[RFC-Driven Agentic Development（RDAD）](https://gist.github.com/kazyamaz200/94595a2045a9562b9c804c17780fede9#file-rdad-md)という開発原則を考えた。
 
 その後、RDAD v0.1を**新規開発ではなく、既存の複数コンポーネントにまたがる改修**に適用してみた。まだ検証途中だが、いくつか面白い観察が得られている。
 
@@ -167,7 +167,7 @@ v0.2では、そこにもう一つ問いを加えたい。
 
 ### 参考資料
 
-- [RDAD — RFC-Driven Agentic Development（公開Gist）](https://gist.github.com/kazyamaz200/94595a2045a9562b9c804c17780fede9)
+- [RDAD — RFC-Driven Agentic Development（公開Gist）](https://gist.github.com/kazyamaz200/94595a2045a9562b9c804c17780fede9#file-rdad-md)
 - [Boundary Notes：AIが脆弱性を「みんなの問題」にする時代、CI/CDは初日から作ろう](/posts/ai-vulnerabilities-day0-ci/)
 - [Boundary Notes：RDADに「Day 0 CI」を組み込んでみる](/posts/rdad-day0-ci/)
 - [NIST SP 800-218 — Secure Software Development Framework](https://csrc.nist.gov/pubs/sp/800/218/final)

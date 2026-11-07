@@ -74,7 +74,7 @@ LLMへの接続にはLiteLLMを利用する構成を採用し、モデルの選�
 
 ## RDADを試して見えてきた、人間の仕事
 
-最近、[RFC-Driven Agentic Development（RDAD）](https://gist.github.com/kazyamaz200/94595a2045a9562b9c804c17780fede9)という開発原則を考え、既存システムの改修に適用している。
+最近、[RFC-Driven Agentic Development（RDAD）](https://gist.github.com/kazyamaz200/94595a2045a9562b9c804c17780fede9#file-rdad-md)という開発原則を考え、既存システムの改修に適用している。
 
 RDADでは、RFCで目的と受入条件を定義し、予備設計でコンポーネント間の契約を確認し、実装計画を作り、実装と検証を進める。必要十分な実装、リスクに応じた検証、不具合修正の収束性を重視する。
 
@@ -194,7 +194,7 @@ ARUNも、そんなプロジェクトとして育てていきたい。
 - [ARUN — GitHub](https://github.com/hakobune8/arun)
 - [ARUN Architecture](https://github.com/hakobune8/arun/blob/main/docs/architecture.md)
 - [ARUN Multi-Agent Orchestrator](https://github.com/hakobune8/arun/blob/main/docs/orchestrator.md)
-- [RDAD — RFC-Driven Agentic Development](https://gist.github.com/kazyamaz200/94595a2045a9562b9c804c17780fede9)
+- [RDAD — RFC-Driven Agentic Development](https://gist.github.com/kazyamaz200/94595a2045a9562b9c804c17780fede9#file-rdad-md)
 - [Boundary Notes：RDAD v0.2へ — AIに既存システムを安全に進化させるには](/posts/rdad-v02-brownfield/)
 
 *本記事は2026年11月2日時点の公開資料と開発上の考察に基づいています。ARUNの実装済み機能と将来構想を区別して記述しています。*

@@ -13,7 +13,7 @@ ogImage: "https://kazyamaz200.github.io/og.png"
 
 一方、AIを使って長時間の自律開発を進めていると、統合テストの段階で不具合が次々に見つかり、修正と再テストを繰り返すうちに完了が見えなくなることがある。
 
-この経験をきっかけに考えたのが、[RFC-Driven Agentic Development（RDAD）](https://gist.github.com/kazyamaz200/94595a2045a9562b9c804c17780fede9)だ。
+この経験をきっかけに考えたのが、[RFC-Driven Agentic Development（RDAD）](https://gist.github.com/kazyamaz200/94595a2045a9562b9c804c17780fede9#file-rdad-md)だ。
 
 今回はそこへ **Day 0 CI**、つまり「最初の機能実装から継続的に検証できる、最小限のCI」を組み込む方法を考えてみたい。
 
@@ -228,7 +228,7 @@ AIがソフトウェアを作る速度を上げたのなら、検証する仕組
 
 ### 参考資料
 
-- [RDAD.md v0.1 Draft](https://gist.github.com/kazyamaz200/94595a2045a9562b9c804c17780fede9)
+- [RDAD.md v0.1 Draft](https://gist.github.com/kazyamaz200/94595a2045a9562b9c804c17780fede9#file-rdad-md)
 - [Boundary Notes：AIが脆弱性を「みんなの問題」にする時代、CI/CDは初日から作ろう](/posts/ai-vulnerabilities-day0-ci/)
 - [GitHub Docs：Secure use reference for GitHub Actions](https://docs.github.com/en/actions/reference/security/secure-use)
 - [GitHub Docs：Dependency review](https://docs.github.com/en/code-security/concepts/supply-chain-security/dependency-review)

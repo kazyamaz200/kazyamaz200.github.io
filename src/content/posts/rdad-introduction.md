@@ -373,5 +373,5 @@ AIが自律的に開発を進める中でも、要求と設計の意図を保ち
 
 ## 参考資料
 
-- [RDAD — RFC-Driven Agentic Development v0.1 Draft](https://gist.github.com/kazyamaz200/94595a2045a9562b9c804c17780fede9)
+- [RDAD — RFC-Driven Agentic Development v0.1 Draft](https://gist.github.com/kazyamaz200/94595a2045a9562b9c804c17780fede9#file-rdad-md)
 - [Boundary Notes — Engineering at the Boundaries.](https://kazyamaz200.github.io/)

@@ -13,7 +13,7 @@ AIコーディングエージェントに開発を任せていると、実装そ
 
 実装が過剰になったり、コンポーネント間の認識が揃わなかったり、テストの失敗を修正し続けてなかなか完成しなかったり。
 
-そんな経験から考えたのが、[RDAD（RFC-Driven Agentic Development）](https://gist.github.com/kazyamaz200/94595a2045a9562b9c804c17780fede9)という開発原則だ。
+そんな経験から考えたのが、[RDAD（RFC-Driven Agentic Development）](https://gist.github.com/kazyamaz200/94595a2045a9562b9c804c17780fede9#file-rdad-md)という開発原則だ。
 
 今回、RDAD v0.1を実際の開発に適用し、7段階の既存システム改修を最後まで進めることができた。
 
@@ -194,5 +194,5 @@ RDAD v0.2は、こうした改善を検討している段階であり、まだ�
 
 ### 関連記事
 
-- [RDAD — RFC-Driven Agentic Development](https://gist.github.com/kazyamaz200/94595a2045a9562b9c804c17780fede9)
+- [RDAD — RFC-Driven Agentic Development](https://gist.github.com/kazyamaz200/94595a2045a9562b9c804c17780fede9#file-rdad-md)
 - [RDAD v0.2へ — AIに既存システムを安全に進化させるには](/posts/rdad-v02-brownfield/)
