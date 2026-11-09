@@ -1,4 +1,4 @@
-# MLPA listening page — local implementation
+# MLPA listening page
 
 This page is independent of MLPA WP06 execution. No research evaluation is completed by running these tests. The original WAV bytes and assigned P01–P05 orders must remain unchanged. Never add condition mappings, audit data, invite tokens, research responses or private keys to `public/`, source bundles or Git history.
 
@@ -27,6 +27,10 @@ API contract (local): POST `/api/mlpa-listening/responses`, JSON `{consent:true,
 
 No MLPA aggregator or full WP06 protocol source was provided: compatibility is checked against supplied templates. Run the unchanged actual WP06 aggregator on approved real-human exports later on the MLPA side. Production service adoption, token management, receiver deployment, public Git commit and evaluation start are separate owner gates.
 
-## Adopted receiver (pre-publication)
+## Adopted receiver
 
 The owner approved Workers + D1 on 2026-11-09. `worker/` now provides the handler, schema, operator and real workerd/D1 integration tests. See `worker/README.md`. The site remains closed by default; configuring an API origin alone does not begin collection. Final consent wording and the collection-start flag require owner review. Existing local preview behavior remains available when no external API origin is configured.
+
+## Published collection (2026-11-09)
+
+Owner-approved page: https://kazyamaz200.github.io/mlpa-listening/ . Participants need their separately distributed private invitation URLs; do not put those links in this repository. The production API is configured through GitHub repository build variables. Consent version is `mlpa-wp06-consent-2026-11-09-v1`; individual responses are deleted within 90 days after collection closes, while non-identifying aggregate research records require separate review before publication. See `worker/README.md` for the operator retention procedure and the explicit acceptance-start override. Human WP06 evaluation remains pending until real participants respond. All instructions above for the local receiver refer only to local synthetic QA.

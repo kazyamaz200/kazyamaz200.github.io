@@ -4,7 +4,9 @@ The receiver is independent of MLPA WP06. It does not contain condition mappings
 
 ## Gates
 
-`workers_dev: false`, `preview_urls: false`, `ACCEPTING_RESPONSES: false` and `CONSENT_VERSION: pending-owner-review` are intentional. The configured D1 ID was returned by Cloudflare for the dedicated database. Temporary local tests use a separate all-zero placeholder and never the production database. Do not publish or enable formal collection before owner approval and final consent/data-retention wording. No paid plan change is required.
+The owner approved publication and collection on 2026-11-09, with consent version `mlpa-wp06-consent-2026-11-09-v1`. The static page is https://kazyamaz200.github.io/mlpa-listening/ and the API is https://boundary-notes-mlpa-listening.hqrhp8pywj-1ae.workers.dev .
+
+`workers_dev: true` exposes the invite-protected API. `preview_urls: false` and disabled observability remain intentional. The checked-in `ACCEPTING_RESPONSES: false` is a safe deployment default. The approved live deployment explicitly uses `wrangler deploy --var ACCEPTING_RESPONSES:true`; a plain deploy closes collection. Repeat that explicit override only when collection should remain open. Never mix staging responses with production. The configured D1 ID belongs to the dedicated production database. No paid plan change was made.
 
 ## Local verification
 
