@@ -10,6 +10,10 @@ jobs:
   build:
     if: github.ref == 'refs/heads/main' && vars.PUBLICATION_APPROVED_SHA == github.sha
     runs-on: ubuntu-latest
+    env:
+      PUBLIC_MLPA_API_URL: ${{ vars.MLPA_API_URL }}
+      PUBLIC_MLPA_ACCEPTING_RESPONSES: ${{ vars.MLPA_ACCEPTING_RESPONSES }}
+      PUBLIC_MLPA_CONSENT_VERSION: ${{ vars.MLPA_CONSENT_VERSION }}
     steps:
       - uses: actions/checkout@v7
       - uses: withastro/action@v6

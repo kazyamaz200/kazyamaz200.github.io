@@ -1,0 +1,22 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "boundary-notes-mlpa-listening",
+  "main": "index.ts",
+  "compatibility_date": "2026-11-09",
+  "workers_dev": true,
+  "preview_urls": false,
+  "observability": { "enabled": false },
+  "vars": {
+    "ALLOWED_ORIGIN": "https://kazyamaz200.github.io",
+    "ACCEPTING_RESPONSES": "false",
+    "CONSENT_VERSION": "mlpa-wp06-consent-2026-11-09-v1",
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "boundary-notes-mlpa-listening",
+      "database_id": "c092981c-3f33-44c0-8b6a-00832c37c555",
+      "migrations_dir": "migrations",
+    },
+  ],
+}

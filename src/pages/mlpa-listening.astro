@@ -1,0 +1,319 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import Header from "@/components/Header.astro";
+import Footer from "@/components/Footer.astro";
+const apiUrl = import.meta.env.PUBLIC_MLPA_API_URL ?? "";
+if (apiUrl) {
+  const parsed = new URL(apiUrl);
+  if (
+    parsed.protocol !== "https:" &&
+    !(parsed.protocol === "http:" && parsed.hostname === "127.0.0.1")
+  )
+    throw new Error("MLPA API requires HTTPS or loopback for local tests");
+  if (
+    parsed.username ||
+    parsed.password ||
+    parsed.search ||
+    parsed.hash ||
+    parsed.pathname !== "/"
+  )
+    throw new Error("MLPA API must be an origin without credentials");
+}
+const accepting = import.meta.env.PUBLIC_MLPA_ACCEPTING_RESPONSES === "true";
+const consentVersion =
+  import.meta.env.PUBLIC_MLPA_CONSENT_VERSION ?? "pending-owner-review";
+---
+
+<Layout
+  title="MLPA 音の印象評価 | Boundary Notes"
+  analytics={false}
+  transitions={false}
+>
+  <meta slot="head" name="robots" content="noindex, nofollow" />
+  <meta slot="head" name="referrer" content="no-referrer" />
+  <Header />
+  <main
+    id="main-content"
+    class="app-layout pb-12"
+    data-api-url={apiUrl}
+    data-accepting={accepting}
+    data-consent-version={consentVersion}
+  >
+    <h1 class="text-2xl font-semibold">MLPA 音の印象評価</h1>
+    <p id="mode" class="notice" role="status">送信先を確認しています…</p>
+    <noscript><p>この画面にはJavaScriptが必要です。</p></noscript>
+    <p id="error" role="alert" tabindex="-1" hidden></p>
+
+    <section id="intro" aria-labelledby="intro-title">
+      <h2 id="intro-title">ご参加の前に</h2>
+      <p>
+        12個の短い音声を一つずつ聴いて、感じた印象を3つの指標で評価します。音の意味を当てる課題ではありません。他の方の評点を参照せず、ご自身の印象でお答えください。
+      </p>
+      <p>
+        同じ再生機器を使い、最初に無理のない音量を決め、途中で音量を変えずに聴いてください。再聴や休憩は自由です。疲れたり不快に感じたりした場合は、いつでも中止できます。
+      </p>
+      <p>
+        氏名・連絡先・録音は不要です。コメントにも個人情報を記入しないでください。開発者かどうかと再生機器の申告は任意です。
+      </p>
+      <p id="data-policy-local" hidden={Boolean(apiUrl)}>
+        このローカル確認版はテスト用です。送信した回答は作業端末に保存され、正式評価には使用されません。本番の保存先・保存期間・参加方法は、公開前に担当者がご案内します。
+      </p>
+      <div id="data-policy-formal" hidden={!apiUrl}>
+        <p>
+          回答はMLPAの音の印象を調べる研究に使用します。参加は任意で、送信前はいつでも中止できます。参加しないことによる不利益はありません。
+        </p>
+        <p>
+          個々の回答は今回のMLPA評価・分析に使用し、受付終了後90日以内に削除します。個人を特定できない集計結果は研究記録として保管し、公開時は別途レビューします。撤回・修正の相談は、招待の際に使った担当者との連絡方法でお願いします。
+        </p>
+        <details>
+          <summary>回答データの取扱いについて</summary><p>
+            回答の受信・保存にはCloudflareを利用する構成です。氏名・連絡先・録音の提供は求めません。参加者番号、評点、任意の申告・コメントを扱い、回答を一般公開する画面は設けません。サービス提供者は通信処理のためにIPアドレス等を扱う場合があります。
+          </p>
+        </details>
+      </div>
+      <p>
+        入力中の回答はこの画面だけで保持します。再読み込みやページ移動で失われます。機器・音量・所要時間は自動測定しません。
+      </p>
+      <form id="start-form">
+        <label for="participant">担当者から割り当てられた参加者番号</label>
+        <input
+          id="participant"
+          name="participant"
+          autocomplete="off"
+          spellcheck="false"
+          placeholder="例：P01"
+          pattern="P0[1-5]"
+          required
+        />
+        <p class="hint">
+          P01〜P05。番号を自分で選ばず、割り当てを確認してください。
+        </p>
+        <label for="developer"
+          >ソフトウェア・ロボット等の開発者ですか（任意）</label
+        >
+        <select id="developer"
+          ><option value="">未申告</option><option value="true">はい</option
+          ><option value="false">いいえ</option></select
+        >
+        <label for="output">再生機器（任意）</label>
+        <select id="output"
+          ><option value="">未申告</option><option value="headphones"
+            >ヘッドホン・イヤホン</option
+          ><option value="speakers">スピーカー</option><option value="other"
+            >その他</option
+          ></select
+        >
+        <label class="check"
+          ><input
+            type="checkbox"
+            id="consent"
+            required
+          />説明を読み、任意で参加することに同意します。</label
+        >
+        <button type="submit" disabled={Boolean(apiUrl)}>試聴を始める</button>
+      </form>
+    </section>
+
+    <section id="rating" hidden aria-labelledby="clip-title">
+      <p id="progress" aria-live="polite"></p>
+      <progress id="progress-bar" max="12" value="0" aria-label="回答済み音声数"
+      ></progress>
+      <h2 id="clip-title" tabindex="-1"></h2>
+      <p>
+        音量を確かめて再生してください。最後まで聴くと次へ進めます。何度でも聴き直せます。
+      </p>
+      <audio id="audio" controls preload="none" aria-label="評価する音声"
+      ></audio>
+      <p id="audio-status" role="status">まだ最後まで再生していません。</p>
+      <form id="rating-form">
+        <p>
+          1〜5を選んでください。分からない場合は「判断できない」を選び、推測で埋めないでください。不快さは、数値が大きいほど不快という意味です。
+        </p>
+        <div id="scales"></div>
+        <label for="listen-count"
+          >この音声を聴いた回数（覚えている場合だけ・任意）</label
+        >
+        <input
+          id="listen-count"
+          type="number"
+          min="1"
+          step="1"
+          inputmode="numeric"
+        />
+        <label for="comment"
+          >この音声についてのコメント（任意・1000文字まで）</label
+        >
+        <textarea id="comment" maxlength="1000" rows="3"></textarea>
+        <div class="actions">
+          <button id="previous" type="button">前の音声</button><button
+            id="next"
+            type="submit">回答して次へ</button
+          >
+        </div>
+      </form>
+    </section>
+
+    <section id="review" hidden aria-labelledby="review-title">
+      <h2 id="review-title" tabindex="-1">回答の確認</h2>
+      <p>
+        未選択の項目があると確定できません。「判断できない」は未回答と区別して保存します。
+      </p>
+      <div id="summary"></div>
+      <form id="submit-form">
+        <label for="fatigue"
+          >疲労・休憩・繰り返し聴取などについて（任意・1000文字まで）</label
+        >
+        <textarea id="fatigue" maxlength="1000" rows="3"></textarea>
+        <label class="check"
+          ><input
+            id="human"
+            type="checkbox"
+            required
+          />自分で12音声を実際に聴き、回答を確認しました。</label
+        >
+        <p>
+          同じ参加者番号での回答は1回です。確定後の変更は担当者へご相談ください。
+        </p>
+        <button id="send" type="submit" disabled>テスト回答を送信する</button>
+      </form>
+    </section>
+
+    <section id="complete" hidden aria-labelledby="complete-title">
+      <h2 id="complete-title" tabindex="-1">テスト回答を保存しました</h2>
+      <p id="receipt"></p>
+      <p id="completion-message">
+        ご協力ありがとうございます。この保存はローカル動作確認用です。正式な人間評価の実施・提出には数えません。
+      </p>
+      <button id="download" type="button">自分の回答JSONを保存</button>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<script>
+  import "@/scripts/mlpa-listening";
+</script>
+
+<style>
+  h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 1.5rem 0 0.75rem;
+  }
+  p {
+    margin: 0.8rem 0;
+    line-height: 1.85;
+  }
+  .notice {
+    padding: 0.8rem 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: 0.5rem;
+  }
+  #error {
+    border-left: 4px solid var(--color-accent);
+    padding: 0.75rem;
+    font-weight: 600;
+  }
+  label:not(.check) {
+    display: block;
+    margin: 1rem 0 0.4rem;
+  }
+  input:not([type="checkbox"]),
+  select,
+  textarea {
+    padding: 0.65rem;
+    border: 1px solid var(--color-border);
+    border-radius: 0.3rem;
+    background: var(--color-background);
+    color: var(--color-foreground);
+    width: 100%;
+  }
+  .check {
+    display: flex;
+    align-items: start;
+    gap: 0.7rem;
+    margin: 1.25rem 0;
+    line-height: 1.7;
+  }
+  input[type="checkbox"] {
+    flex: none;
+    width: 1.3rem;
+    height: 1.3rem;
+    margin-top: 0.2rem;
+    accent-color: var(--color-accent);
+  }
+  button {
+    min-height: 44px;
+    padding: 0.6rem 1rem;
+    border: 1px solid var(--color-accent);
+    border-radius: 0.35rem;
+    color: var(--color-foreground);
+  }
+  button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: space-between;
+    margin-top: 1.25rem;
+  }
+  .hint {
+    font-size: 0.875rem;
+  }
+  audio {
+    width: 100%;
+    margin: 0.7rem 0;
+  }
+  progress {
+    width: 100%;
+    accent-color: var(--color-accent);
+  }
+  :global(.listening-scale) {
+    border: 1px solid var(--color-border);
+    padding: 0.75rem;
+    margin: 1rem 0;
+    border-radius: 0.5rem;
+    min-width: 0;
+  }
+  :global(.listening-scale legend) {
+    font-weight: 600;
+    padding: 0 0.3rem;
+  }
+  :global(.scale-choices) {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.4rem;
+  }
+  :global(.scale-choice) {
+    display: flex;
+    min-height: 48px;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    border: 1px solid var(--color-border);
+    border-radius: 0.35rem;
+    cursor: pointer;
+  }
+  :global(.scale-choice:has(input:checked)) {
+    border-color: var(--color-accent);
+    background: var(--color-muted);
+  }
+  :global(.scale-choice input) {
+    accent-color: var(--color-accent);
+  }
+  :global(.scale-choice:last-child) {
+    grid-column: 1 / -1;
+  }
+  :global(.review-row) {
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+  :global(.review-row p) {
+    overflow-wrap: anywhere;
+  }
+  :global(.review-row button) {
+    margin-top: 0.5rem;
+  }
+</style>

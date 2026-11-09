@@ -8,6 +8,9 @@ const analyticsWindow = window as typeof window & {
 if (
   import.meta.env.PROD &&
   window.location.origin === "https://kazyamaz200.github.io" &&
+  window.location.pathname !== "/mlpa-listening" &&
+  !window.location.pathname.startsWith("/mlpa-listening/") &&
+  !document.querySelector('meta[name="analytics-disabled"]') &&
   !analyticsWindow.__boundaryAnalyticsLoaded
 ) {
   analyticsWindow.__boundaryAnalyticsLoaded = true;

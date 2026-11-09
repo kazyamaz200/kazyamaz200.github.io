@@ -11,6 +11,10 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      PUBLIC_MLPA_API_URL: ${{ vars.MLPA_API_URL }}
+      PUBLIC_MLPA_ACCEPTING_RESPONSES: ${{ vars.MLPA_ACCEPTING_RESPONSES }}
+      PUBLIC_MLPA_CONSENT_VERSION: ${{ vars.MLPA_CONSENT_VERSION }}
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
@@ -19,3 +23,10 @@ jobs:
           node-version: "24"
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
+      - run: pnpm test:mlpa
+      - run: npm ci --no-audit --no-fund
+        working-directory: worker
+      - run: npm test
+        working-directory: worker
+        env:
+          WRANGLER_SEND_METRICS: "false"

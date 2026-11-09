@@ -12,6 +12,8 @@ type Props = {
   description?: string;
   ogImage?: string;
   canonicalURL?: string;
+  analytics?: boolean;
+  transitions?: boolean;
 };
 
 const { site } = config;
@@ -21,6 +23,8 @@ const {
   description = site.description,
   ogImage = resolveDefaultOgImagePath(config),
   canonicalURL = new URL(Astro.url.pathname, Astro.site).href,
+  analytics = true,
+  transitions = true,
 } = Astro.props;
 
 const socialImageURL = new URL(ogImage, Astro.site ?? Astro.url);
@@ -54,6 +58,7 @@ const rssHref = getRelativeLocaleUrl(
     <meta name="title" content={title} />
     <meta name="description" content={description} />
     <meta name="author" content={site.author} />
+    {!analytics && <meta name="analytics-disabled" content="true" />}
     <link rel="sitemap" href={getAssetPath("sitemap-index.xml")} />
 
     <!-- Open Graph -->
@@ -111,7 +116,7 @@ const rssHref = getRelativeLocaleUrl(
       })();
     </script>
 
-    <ClientRouter />
+    {transitions && <ClientRouter />}
   </head>
   <body
     class="bg-background font-app text-foreground selection:bg-accent/75 selection:text-accent-foreground flex min-h-svh flex-col"

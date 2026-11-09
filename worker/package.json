@@ -1,0 +1,13 @@
+{
+  "name": "boundary-notes-mlpa-receiver",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test receiver.test.mjs",
+    "dev": "wrangler dev --local --ip 127.0.0.1",
+    "check": "wrangler deploy --dry-run --outdir .build"
+  },
+  "devDependencies": {
+    "wrangler": "4.158.0"
+  }
+}

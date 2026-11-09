@@ -25,3 +25,9 @@ pnpm-debug.log*
 
 # pagefind
 public/pagefind
+# Local Worker state, secrets and generated deployment bundles
+worker/.wrangler/
+worker/.build/
+worker/.dev.vars*
+worker/wrangler.local.json*
+worker/node_modules

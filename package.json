@@ -13,7 +13,9 @@
     "astro": "astro",
     "format:check": "prettier --check .",
     "format": "prettier --write .",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test:mlpa": "node --test tests/mlpa-listening.test.mjs",
+    "preview:mlpa": "node scripts/mlpa-listening-local.mjs dist ../private-review/mlpa-listening/local-responses 4340"
   },
   "dependencies": {
     "@astrojs/mdx": "^5.0.6",
