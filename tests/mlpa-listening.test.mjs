@@ -17,7 +17,7 @@ const good = (id = "P01") => {
   return { consent: true, response: r };
 };
 
-test("all five orders accept integers and explicit unknown; canonical WP06 keys", () => {
+test("all assigned orders accept integers and explicit unknown; canonical WP06 keys", () => {
   for (const id of participantIds) {
     const body = good(id);
     body.response.ratings[0].melodicness = null;
@@ -33,7 +33,7 @@ test("invalid scores, missing fields, duplicates, wrong order and extra data are
   for (const edit of [
     b => (b.consent = false),
     b => (b.response.completed_by_human = false),
-    b => (b.response.participant_id = "P06"),
+    b => (b.response.participant_id = "P08"),
     b => b.response.ratings.pop(),
     b => b.response.ratings.reverse(),
     b => (b.response.ratings[0].audio_id = "S99"),

@@ -6,12 +6,19 @@ import { spawnSync } from "node:child_process";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import {
   participantIds,
+  isParticipant,
   validateSubmission,
 } from "../src/lib/mlpa-listening.ts";
 const directory = fileURLToPath(new URL(".", import.meta.url));
 const repository = resolve(directory, "..");
-export function generateInvitations() {
-  return participantIds.map(id => {
+export function generateInvitations(ids = participantIds) {
+  if (
+    !ids.length ||
+    new Set(ids).size !== ids.length ||
+    !ids.every(isParticipant)
+  )
+    throw Error("Invalid participant selection");
+  return ids.map(id => {
     const token = randomBytes(32).toString("base64url");
     return {
       participant_id: id,
@@ -35,7 +42,7 @@ export function responseFiles(rows) {
   });
 }
 async function main() {
-  const [action, outputArg, configArg, mode] = process.argv.slice(2);
+  const [action, outputArg, configArg, mode, ...ids] = process.argv.slice(2);
   if (
     !["issue", "export"].includes(action) ||
     !outputArg ||
@@ -81,7 +88,7 @@ async function main() {
     return JSON.parse(r.stdout);
   };
   if (action === "issue") {
-    const invitations = generateInvitations();
+    const invitations = generateInvitations(ids.length ? ids : participantIds);
     const destination = join(actual, "invitations.json");
     // Persist once before modifying remote state, so an interrupted request is recoverable.
     await writeFile(

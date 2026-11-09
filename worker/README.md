@@ -34,7 +34,7 @@ node operator.mjs issue /absolute/private/invites ./wrangler.jsonc remote
 node operator.mjs export /absolute/private/exports ./wrangler.jsonc remote
 ```
 
-`issue` generates five random 256-bit invitation tokens. The file contains private invitation URLs; only SHA-256 hashes go to D1. The file is written exclusively with mode 0600 before the single atomic SQL insertion. Existing invitations cause failure without overwrite. If interrupted, retain the file, inspect D1 with operator permissions and reconcile whether insertion happened before retrying. `export` saves each response as WP06-compatible `<participant>.responses.json`, without acceptance metadata; it refuses to overwrite existing files. The operator still validates JSON before writing. Exports and invitation files must be managed as private data.
+`issue` generates random 256-bit invitation tokens for the selected participants. The file contains private invitation URLs; only SHA-256 hashes go to D1. The file is written exclusively with mode 0600 before the single atomic SQL insertion. Existing invitations cause failure without overwrite. If interrupted, retain the file, inspect D1 with operator permissions and reconcile whether insertion happened before retrying. `export` saves each response as WP06-compatible `<participant>.responses.json`, without acceptance metadata; it refuses to overwrite existing files. The operator still validates JSON before writing. Exports and invitation files must be managed as private data.
 
 Revoke an invitation by setting `invitations.active = 0` for the assigned participant through authenticated D1 administration. Reissue only after generating a new token privately and atomically replacing its hash; this invalidates the old invitation. Never put a token in SQL (only its hash), a CLI command argument, a log, or the public build. Do not automatically clear or overwrite existing responses to allow a second answer. Corrections/withdrawals are handled by the operator after checking the invitation/participant and recording the authorized change outside the public repository.
 
@@ -53,3 +53,13 @@ Owner-approved consent version: `mlpa-wp06-consent-2026-11-09-v1`. Individual re
 The operator owns retention execution. At collection close: set `ACCEPTING_RESPONSES=false`, deploy, record the closure date and deletion deadline privately, and disable invitations. Delete individual D1 responses and all individual exports, downloads and copies by day 59. This leaves room for up to 30 days of D1 Time Travel history within the 90-day limit; confirm current provider retention when closing. Keep only reviewed non-identifying aggregates. Record deletion checks privately; do not restore expired responses from history. No automatic close date is inferred from the publication date.
 
 Cloudflare Time Travel documentation: https://developers.cloudflare.com/d1/reference/time-travel/
+
+## Issue only additional invitations
+
+Migration `0002_add_two_participants.sql` expands the participant constraint to P01–P07 and preserves all existing invitation/response columns in the same atomic migration. Apply and verify it in staging before production. Existing links and answers are not rotated or overwritten.
+
+```sh
+node operator.mjs issue /absolute/private/additional-invites ./wrangler.jsonc remote P06 P07
+```
+
+Only the specified IDs are generated/inserted; existing IDs cause an exclusive-insert failure. Without IDs, all configured participants are selected. P06/P07 use the approved P02/P05 presentation orders respectively, with distinct IDs preserved in exports.

@@ -220,6 +220,70 @@ test("real workerd and D1", async t => {
     );
     await stop();
     await t.test(
+      "D1 migration preserves old answers and invites while adding participants",
+      async () => {
+        let dbPath;
+        for (const file of (await readdir(state, { recursive: true })).filter(
+          x => x.endsWith(".sqlite")
+        )) {
+          const db = new DatabaseSync(join(state, file), { readOnly: true });
+          try {
+            db.prepare("SELECT * FROM responses").all();
+            dbPath = join(state, file);
+          } catch {
+          } finally {
+            db.close();
+          }
+        }
+        assert(dbPath);
+        const beforeDb = new DatabaseSync(dbPath, { readOnly: true });
+        const beforeRows = beforeDb
+          .prepare("SELECT * FROM responses ORDER BY participant_id")
+          .all();
+        const beforeInvites = beforeDb
+          .prepare("SELECT * FROM invitations ORDER BY participant_id")
+          .all();
+        beforeDb.close();
+        const migration = resolve(
+          dir,
+          "migrations/0002_add_two_participants.sql"
+        );
+        const applied = spawnSync(
+          process.execPath,
+          [
+            cli,
+            "d1",
+            "execute",
+            "DB",
+            "--local",
+            "--persist-to",
+            state,
+            "--config",
+            config,
+            "--file",
+            migration,
+          ],
+          { env, cwd: dir, encoding: "utf8" }
+        );
+        assert.equal(applied.status, 0, applied.stderr + applied.stdout);
+        const afterDb = new DatabaseSync(dbPath, { readOnly: true });
+        assert.deepEqual(
+          afterDb
+            .prepare("SELECT * FROM responses ORDER BY participant_id")
+            .all(),
+          beforeRows
+        );
+        assert.deepEqual(
+          afterDb
+            .prepare("SELECT * FROM invitations ORDER BY participant_id")
+            .all(),
+          beforeInvites
+        );
+        assert.deepEqual(afterDb.prepare("PRAGMA foreign_key_check").all(), []);
+        afterDb.close();
+      }
+    );
+    await t.test(
       "independent SQLite reader verifies WP06 JSON and hashed tokens",
       async () => {
         let found = false;
@@ -258,6 +322,60 @@ test("real workerd and D1", async t => {
         assert(found);
       }
     );
+    tokens.P06 = randomBytes(32).toString("base64url");
+    tokens.P07 = randomBytes(32).toString("base64url");
+    const extraSql = join(tmp, "extra.sql");
+    await writeFile(
+      extraSql,
+      ["P06", "P07"]
+        .map(
+          id =>
+            `INSERT INTO invitations VALUES ('${id}','${createHash("sha256").update(tokens[id]).digest("hex")}',1);`
+        )
+        .join("\n")
+    );
+    const seeded = spawnSync(
+      process.execPath,
+      [
+        cli,
+        "d1",
+        "execute",
+        "DB",
+        "--local",
+        "--persist-to",
+        state,
+        "--config",
+        config,
+        "--file",
+        extraSql,
+      ],
+      { env, cwd: dir, encoding: "utf8" }
+    );
+    assert.equal(seeded.status, 0, seeded.stderr + seeded.stdout);
+    await start();
+    await t.test(
+      "additional P06/P07 can authenticate, submit, and export",
+      async () => {
+        for (const id of ["P06", "P07"]) {
+          const r = await fetch(base + "/invitation", {
+            headers: { Origin: origin, Authorization: "Bearer " + tokens[id] },
+          });
+          assert.equal((await r.json()).participant_id, id);
+          assert.equal((await post(payload(id), tokens[id])).status, 201);
+        }
+        const { responseFiles } = await import("./operator.mjs");
+        assert.deepEqual(
+          responseFiles(
+            ["P06", "P07"].map(id => ({
+              participant_id: id,
+              body: JSON.stringify(payload(id).response),
+            }))
+          ).map(x => x.name),
+          ["P06.responses.json", "P07.responses.json"]
+        );
+      }
+    );
+    await stop();
     conf.vars.ACCEPTING_RESPONSES = "false";
     await writeFile(config, JSON.stringify(conf));
     await start();
@@ -285,8 +403,13 @@ test("real workerd and D1", async t => {
 test("operator: private invitations are unpredictable and exports stay WP06-compatible", async () => {
   const { generateInvitations, responseFiles } = await import("./operator.mjs");
   const invitations = generateInvitations();
-  assert.equal(invitations.length, 5);
-  assert.equal(new Set(invitations.map(x => x.token)).size, 5);
+  assert.equal(invitations.length, 7);
+  assert.equal(new Set(invitations.map(x => x.token)).size, 7);
+  assert.deepEqual(
+    generateInvitations(["P06", "P07"]).map(x => x.participant_id),
+    ["P06", "P07"]
+  );
+  assert.throws(() => generateInvitations(["P06", "P06"]));
   for (const x of invitations) {
     assert.match(x.token, /^[A-Za-z0-9_-]{43}$/);
     assert.equal(

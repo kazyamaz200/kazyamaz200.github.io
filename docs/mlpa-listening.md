@@ -34,3 +34,7 @@ The owner approved Workers + D1 on 2026-11-09. `worker/` now provides the handle
 ## Published collection (2026-11-09)
 
 Owner-approved page: https://kazyamaz200.github.io/mlpa-listening/ . Participants need their separately distributed private invitation URLs; do not put those links in this repository. The production API is configured through GitHub repository build variables. Consent version is `mlpa-wp06-consent-2026-11-09-v1`; individual responses are deleted within 90 days after collection closes, while non-identifying aggregate research records require separate review before publication. See `worker/README.md` for the operator retention procedure and the explicit acceptance-start override. Human WP06 evaluation remains pending until real participants respond. All instructions above for the local receiver refer only to local synthetic QA.
+
+## Additional participants (2026-11-09)
+
+The owner approved two additional participants while keeping all original invitations valid. P06 reuses P02's exact presentation order; P07 reuses P05's. Original WAV bytes and P01–P05 orders remain unchanged. Additional IDs remain distinct in exports; private provenance records the source order and cohort extension. No MLPA source protocol/package was edited. Validate the original WP06 aggregator's handling of additional IDs when aggregating actual human results; do not relabel responses to the original IDs.
