@@ -19,7 +19,9 @@ if (apiUrl) {
   )
     throw new Error("MLPA API must be an origin without credentials");
 }
-const accepting = import.meta.env.PUBLIC_MLPA_ACCEPTING_RESPONSES === "true";
+const collectionState = import.meta.env.PUBLIC_MLPA_ACCEPTING_RESPONSES;
+const accepting = collectionState === "true";
+const closed = collectionState === "closed";
 const consentVersion =
   import.meta.env.PUBLIC_MLPA_CONSENT_VERSION ?? "pending-owner-review";
 ---
@@ -37,14 +39,38 @@ const consentVersion =
     class="app-layout pb-12"
     data-api-url={apiUrl}
     data-accepting={accepting}
+    data-closed={closed}
     data-consent-version={consentVersion}
   >
     <h1 class="text-2xl font-semibold">MLPA 音の印象評価</h1>
-    <p id="mode" class="notice" role="status">送信先を確認しています…</p>
-    <noscript><p>この画面にはJavaScriptが必要です。</p></noscript>
+    <p id="mode" class="notice" role="status">
+      {
+        closed
+          ? "今回の回答受付は終了しました。ご協力ありがとうございました。"
+          : "送信先を確認しています…"
+      }
+    </p>
+    {
+      closed ? (
+        <p>
+          評価結果と会話の音声デモは、
+          <a
+            class="text-accent underline underline-offset-4"
+            href="/posts/mlpa-poc-musical-conversation-results/"
+          >
+            記事13「ロボットはメロディーで会話できるのか？」
+          </a>
+          でご覧いただけます。
+        </p>
+      ) : (
+        <noscript>
+          <p>この画面にはJavaScriptが必要です。</p>
+        </noscript>
+      )
+    }
     <p id="error" role="alert" tabindex="-1" hidden></p>
 
-    <section id="intro" aria-labelledby="intro-title">
+    <section id="intro" aria-labelledby="intro-title" hidden={closed}>
       <h2 id="intro-title">ご参加の前に</h2>
       <p>
         12個の短い音声を一つずつ聴いて、感じた印象を3つの指標で評価します。音の意味を当てる課題ではありません。他の方の評点を参照せず、ご自身の印象でお答えください。
@@ -110,7 +136,9 @@ const consentVersion =
             required
           />説明を読み、任意で参加することに同意します。</label
         >
-        <button type="submit" disabled={Boolean(apiUrl)}>試聴を始める</button>
+        <button type="submit" disabled={closed || Boolean(apiUrl)}
+          >試聴を始める</button
+        >
       </form>
     </section>
 

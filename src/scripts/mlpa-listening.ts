@@ -29,6 +29,7 @@ function setup() {
   const invitationToken = invitation.get("token") ?? "";
   const validToken = /^[A-Za-z0-9_-]{43}$/.test(invitationToken);
   if (invitationToken) history.replaceState(null, "", location.pathname);
+  if (main.dataset.closed === "true") return;
   const sendLabel = () =>
     remoteReceiver ? "回答を送信する" : "テスト回答を送信する";
   const selected: Record<string, string>[] = Array.from(
