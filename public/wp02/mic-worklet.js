@@ -7,6 +7,9 @@ class CapturePCM extends AudioWorkletProcessor {
         this.nextFrame = null;
         this.waiting = new Map();
         this.pending = 0;
+        this.published = false;
+        this.startupGaps = 0;
+        this.startupMissing = 0;
         this.port.onmessage = ({data}) => {
             if (this.waiting.has(data.ack)) {
                 this.pending -= this.waiting.get(data.ack);
@@ -24,11 +27,18 @@ class CapturePCM extends AudioWorkletProcessor {
         const channels = inputs[0];
         const length = channels?.[0]?.length ?? 0;
         if (!length) {
-            return this.nextFrame === null || this.fail("CAPTURE_INTERRUPTED");
+            return !this.published || this.fail("CAPTURE_INTERRUPTED");
         }
         if (this.nextFrame !== null && this.nextFrame !== currentFrame) {
             const delta = currentFrame - this.nextFrame;
-            return this.fail(delta > 0 ? "CAPTURE_GAP" : "CAPTURE_OVERLAP", {delta});
+            if (this.published || delta < 0) {
+                return this.fail(delta > 0 ? "CAPTURE_GAP" : "CAPTURE_OVERLAP", {delta});
+            }
+            // No PCM has reached the receiver. Start with a fresh contiguous
+            // block, dropping the partial prefix without filling missing samples.
+            this.size = 0;
+            this.startupGaps++;
+            this.startupMissing += delta;
         }
         if (channels.some(channel => channel.length !== length)) return this.fail("INVALID_CAPTURE_BLOCK");
         this.nextFrame = currentFrame + length;
@@ -52,10 +62,12 @@ class CapturePCM extends AudioWorkletProcessor {
             this.peak = Math.max(this.peak, peak);
             this.samples[this.size++] = sum / channels.length;
             if (this.size === this.samples.length) {
+                this.published = true;
                 this.pending += this.size;
                 this.waiting.set(this.start, this.size);
                 this.port.postMessage({start: this.start, samples: this.samples,
-                    clip: this.clip, peak: this.peak, channels: channels.length}, [this.samples.buffer]);
+                    clip: this.clip, peak: this.peak, channels: channels.length,
+                    startupGaps: this.startupGaps, startupMissing: this.startupMissing}, [this.samples.buffer]);
                 this.size = 0;
                 this.samples = new Float32Array(1024);
             }

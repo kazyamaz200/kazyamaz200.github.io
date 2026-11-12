@@ -104,6 +104,8 @@ export async function mount({action, begin, update, record}) {
                     result = session.adapter.push(data);
                     session.worklet.port.postMessage({ack: data.start});
                     report.observedChannels = data.channels;
+                    report.startupGaps = data.startupGaps;
+                    report.startupMissing = data.startupMissing;
                 } catch (error) {
                     return session.finish("Failed", error.code ?? "CAPTURE_PROCESSING_ERROR");
                 } finally {
