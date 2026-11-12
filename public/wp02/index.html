@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MLPA P2-WP02 実音響試験</title>
+  <style>
+    body {font: 1rem system-ui, sans-serif; max-width: 44rem; margin: 2rem auto; padding: 0 1rem; line-height: 1.5;}
+    button {font: inherit; margin: .25rem 0; padding: .5rem;}
+    pre {white-space: pre-wrap; overflow-wrap: anywhere;}
+  </style>
+</head>
+<body>
+  <h1>MLPA P2-WP02 実音響試験</h1>
+  <nav aria-label="試験モード"><a href="?mode=tx">送信</a> ／ <a href="?mode=rx">受信</a></nav>
+  <p id="status" role="status">試験モードを選んでください。</p>
+  <label>試行ID <input id="trial" maxlength="40" placeholder="例 RX-01"></label>
+  <div id="controls"></div>
+  <button id="download" disabled>試験ログを保存</button>
+  <pre id="result"></pre>
+  <script type="module" src="./lab.mjs"></script>
+</body>
+</html>
