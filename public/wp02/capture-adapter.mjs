@@ -68,7 +68,7 @@ export class C2Capture {
         this.pending = new Float64Array(GATE_BLOCK);
         this.signal = new Float64Array(MAX_PCM);
         this.stats = {firstFrame: null, nextFrame: null, inputSamples: 0, outputSamples: 0,
-            missing: 0, overlap: 0, clip: 0, peak: 0, blocks: 0, candidate: null};
+            missing: 0, overlap: 0, clip: 0, peak: 0, blocks: 0, candidate: null, segmentation: null};
         this.historySize = 0;
         this.historyIndex = 0;
         this.signalSize = 0;
@@ -131,6 +131,7 @@ export class C2Capture {
         }
         if (this.signalSize === 0) {
             this.signalOrigin = blockStart - this.historySize;
+            this.gateOpenedAt = blockStart;
             const start = (this.historyIndex - this.historySize + PREROLL) % PREROLL;
             for (let i = 0; i < this.historySize; i++) {
                 this.signal[i] = this.history[(start + i) % PREROLL];
@@ -140,6 +141,7 @@ export class C2Capture {
         if (this.signalSize + GATE_BLOCK > MAX_PCM) throw new CaptureError("CANDIDATE_LIMIT");
         this.signal.set(this.pending, this.signalSize);
         this.signalSize += GATE_BLOCK;
+        if (active) this.lastActiveBlock = blockStart;
         this.quiet = active ? 0 : this.quiet + 1;
         if (this.quiet < QUIET_BLOCKS) return null;
         return this.finishCandidate();
@@ -156,8 +158,21 @@ export class C2Capture {
         while (last >= 0 && Math.abs(observed[last]) <= cutoff) last--;
         const start = first - C2.frame_gap_samples;
         const end = last + 1 + C2.frame_gap_samples;
-        if (first > last || start < 0 || end > observed.length) {
-            throw new CaptureError("AUDIO_TRUNCATED", "Actual leading or trailing quiet samples are missing.");
+        const insufficientLeading = start < 0;
+        const insufficientTrailing = end > observed.length;
+        const reason = first > last ? "NO_PEAK_CROSSING"
+            : insufficientLeading && insufficientTrailing ? "BOTH_GUARDS_SHORT"
+            : insufficientLeading ? "LEADING_GUARD_SHORT"
+            : insufficientTrailing ? "TRAILING_GUARD_SHORT" : null;
+        this.stats.segmentation = {
+            reason, gateOpened48k: this.gateOpenedAt, lastActiveBlock48k: this.lastActiveBlock,
+            bufferStart48k: this.signalOrigin, bufferEnd48k: this.signalOrigin + observed.length,
+            leadingSamples: first, trailingSamples: observed.length - last - 1,
+            requiredGuardSamples: C2.frame_gap_samples, peak, peakCutoff: cutoff,
+            gateRms: GATE_RMS, quietBlocks: this.quiet,
+        };
+        if (reason) {
+            throw new CaptureError("AUDIO_TRUNCATED", reason);
         }
         const samples = observed.slice(start, end);
         this.stats.candidate = {start48k: this.signalOrigin + start, end48k: this.signalOrigin + end,
