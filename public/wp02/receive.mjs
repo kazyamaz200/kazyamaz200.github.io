@@ -8,11 +8,12 @@ export async function mount({action, begin, update, record}) {
     if (!navigator.mediaDevices?.getUserMedia || !globalThis.AudioWorkletNode || !globalThis.AudioContext) {
         throw new Error("MIC_OR_AUDIOWORKLET_UNAVAILABLE");
     }
+    const bandpass = new URLSearchParams(location.search).get("preprocess") === "bandpass";
     const asset = await fetch(new URL("./mic-worklet.js", import.meta.url));
     if (!asset.ok) throw new Error("WORKLET_ASSET_UNAVAILABLE");
     const workletURL = URL.createObjectURL(new Blob([await asset.text()], {type: "text/javascript"}));
     let active = null;
-    const arm = action("受信開始", armReceiver);
+    const arm = action(bandpass ? "受信開始（帯域通過・実験）" : "受信開始", armReceiver);
     const cancel = action("収録停止", () => active?.finish("Failed", "CANCELLED"));
     cancel.disabled = true;
     update("準備済み。必要ならネットワークを切り、受信を開始してください。");
@@ -20,7 +21,7 @@ export async function mount({action, begin, update, record}) {
     async function armReceiver() {
         if (active) return;
         const started = performance.now();
-        const report = {...begin(), requestedAudio: audio, processorSettings: null, status: "Arming"};
+        const report = {...begin(), preprocessing: bandpass ? "w10-fir-300-1150" : "w09-direct", requestedAudio: audio, processorSettings: null, status: "Arming"};
         const session = {report, started, adapter: null, initialized: false, ready: false,
             cpuMs: 0, maxBlockMs: 0, maxClip: 0, maxPeak: 0};
         let timer;
@@ -85,7 +86,7 @@ export async function mount({action, begin, update, record}) {
             report.resampleRatio = 48000 / session.context.sampleRate;
             track.addEventListener("ended", ended, {once: true});
             track.addEventListener("mute", ended, {once: true});
-            session.adapter = new C2Capture(session.context.sampleRate);
+            session.adapter = new C2Capture(session.context.sampleRate, {bandpass});
             await session.context.audioWorklet.addModule(workletURL);
             if (finishing) return;
             session.source = session.context.createMediaStreamSource(stream);

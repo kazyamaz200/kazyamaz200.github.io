@@ -1,4 +1,5 @@
 import {C2, decodeC2} from "../c2-receiver.mjs";
+import {BANDPASS, bandpassCandidate} from "./bandpass.mjs";
 
 export const RECEIVE_MS = 20000;
 export const MAX_PCM = 10 * C2.sample_rate;
@@ -66,7 +67,8 @@ export class Resample48k {
 }
 
 export class C2Capture {
-    constructor(rate) {
+    constructor(rate, {bandpass = false} = {}) {
+        this.bandpass = bandpass;
         this.rate = rate;
         this.resampler = new Resample48k(rate);
         this.history = new Float64Array(PREROLL);
@@ -175,13 +177,15 @@ export class C2Capture {
     }
 
     finishCandidate() {
-        const observed = this.signal.subarray(0, this.signalSize);
+        const captured = this.signal.subarray(0, this.signalSize);
+        const observed = this.bandpass ? bandpassCandidate(captured) : captured;
+        const origin = this.signalOrigin + (this.bandpass ? BANDPASS.edgeSamples : 0);
         let peak = 0;
         for (const sample of observed) peak = Math.max(peak, Math.abs(sample));
         const cutoff = peak * C2.detector_thresholds.silence_ratio;
         const guard = C2.frame_gap_samples;
-        const openBlockEnd = this.gateOpenedAt - this.signalOrigin + GATE_BLOCK;
-        const lastActiveBlockStart = this.lastActiveBlock - this.signalOrigin;
+        const openBlockEnd = this.gateOpenedAt - origin + GATE_BLOCK;
+        const lastActiveBlockStart = this.lastActiveBlock - origin;
         let runStart = 0;
         let leading = null;
         let trailing = null;
@@ -200,13 +204,13 @@ export class C2Capture {
             : !trailing ? "TRAILING_GUARD_SHORT"
             : leading[1] >= trailing[0] ? "INVALID_GUARD_ORDER" : null;
         this.stats.segmentation = {
-            reason, gateOpened48k: this.gateOpenedAt, lastActiveBlock48k: this.lastActiveBlock,
-            bufferStart48k: this.signalOrigin, bufferEnd48k: this.signalOrigin + observed.length,
+            reason, preprocessing: this.bandpass ? BANDPASS : null, gateOpened48k: this.gateOpenedAt, lastActiveBlock48k: this.lastActiveBlock,
+            bufferStart48k: origin, bufferEnd48k: origin + observed.length,
             guardSelection: "contiguous_c2_quiet_runs",
             leadingSamples: leading ? leading[1] - leading[0] : 0,
             trailingSamples: trailing ? trailing[1] - trailing[0] : 0,
-            leadingRun48k: leading?.map(index => this.signalOrigin + index) ?? null,
-            trailingRun48k: trailing?.map(index => this.signalOrigin + index) ?? null,
+            leadingRun48k: leading?.map(index => origin + index) ?? null,
+            trailingRun48k: trailing?.map(index => origin + index) ?? null,
             requiredGuardSamples: C2.frame_gap_samples, peak, peakCutoff: cutoff,
             gateRms: GATE_RMS, quietBlocks: this.quiet,
         };
@@ -214,7 +218,7 @@ export class C2Capture {
             throw new CaptureError("AUDIO_TRUNCATED", reason);
         }
         const samples = observed.slice(start, end);
-        this.stats.candidate = {start48k: this.signalOrigin + start, end48k: this.signalOrigin + end,
+        this.stats.candidate = {start48k: origin + start, end48k: origin + end,
             samples: samples.length, peak};
         this.finished = true;
         // The same M01 envelope has logical speaker A and receiver B in either
