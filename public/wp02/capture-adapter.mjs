@@ -7,6 +7,7 @@ const PREROLL = 12000;
 const QUIET_BLOCKS = 24;
 const GATE_RMS = 0.003;
 const HALF_FILTER = 32;
+const TRACE_LIMIT = RECEIVE_MS * C2.sample_rate / (1000 * GATE_BLOCK);
 
 export class CaptureError extends Error {
     constructor(code, detail = "") {
@@ -68,7 +69,11 @@ export class C2Capture {
         this.pending = new Float64Array(GATE_BLOCK);
         this.signal = new Float64Array(MAX_PCM);
         this.stats = {firstFrame: null, nextFrame: null, inputSamples: 0, outputSamples: 0,
-            missing: 0, overlap: 0, clip: 0, peak: 0, blocks: 0, candidate: null, segmentation: null};
+            missing: 0, overlap: 0, clip: 0, peak: 0, blocks: 0, candidate: null, segmentation: null,
+            rmsTrace: {blockMs: 1000 * GATE_BLOCK / C2.sample_rate, gateRms: GATE_RMS,
+                closeAfterQuietBlocks: QUIET_BLOCKS, limit: TRACE_LIMIT,
+                columns: ["start48k", "rms", "active", "decision", "quietBlocks"],
+                blocks: [], omittedBlocks: 0}};
         this.historySize = 0;
         this.historyIndex = 0;
         this.signalSize = 0;
@@ -121,7 +126,9 @@ export class C2Capture {
         let power = 0;
         for (const sample of this.pending) power += sample * sample;
         const active = power >= GATE_BLOCK * GATE_RMS ** 2;
+        const opening = this.signalSize === 0 && active;
         if (this.signalSize === 0 && !active) {
+            this.traceBlock(blockStart, power, active, "waiting", 0);
             for (const sample of this.pending) {
                 this.history[this.historyIndex] = sample;
                 this.historyIndex = (this.historyIndex + 1) % PREROLL;
@@ -138,13 +145,28 @@ export class C2Capture {
             }
             this.signalSize = this.historySize;
         }
-        if (this.signalSize + GATE_BLOCK > MAX_PCM) throw new CaptureError("CANDIDATE_LIMIT");
+        if (this.signalSize + GATE_BLOCK > MAX_PCM) {
+            this.traceBlock(blockStart, power, active, "candidate_limit", this.quiet);
+            throw new CaptureError("CANDIDATE_LIMIT");
+        }
         this.signal.set(this.pending, this.signalSize);
         this.signalSize += GATE_BLOCK;
         if (active) this.lastActiveBlock = blockStart;
         this.quiet = active ? 0 : this.quiet + 1;
-        if (this.quiet < QUIET_BLOCKS) return null;
+        const closing = this.quiet >= QUIET_BLOCKS;
+        this.traceBlock(blockStart, power, active,
+            opening ? "open" : closing ? "close" : active ? "active" : "quiet", this.quiet);
+        if (!closing) return null;
         return this.finishCandidate();
+    }
+
+    traceBlock(start, power, active, decision, quietBlocks) {
+        const trace = this.stats.rmsTrace;
+        if (trace.blocks.length >= TRACE_LIMIT) {
+            trace.omittedBlocks++;
+            return;
+        }
+        trace.blocks.push([start, Math.sqrt(power / GATE_BLOCK), active, decision, quietBlocks]);
     }
 
     finishCandidate() {
