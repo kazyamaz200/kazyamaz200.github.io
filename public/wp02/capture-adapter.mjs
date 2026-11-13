@@ -6,6 +6,10 @@ const GATE_BLOCK = 480;
 const PREROLL = 12000;
 const QUIET_BLOCKS = 24;
 const GATE_RMS = 0.003;
+// A transient quiet run within a weak frame must not terminate capture.
+const FRAME_SAMPLES = 42 * C2.note_samples + 28 * C2.inner_gap_samples
+    + 13 * C2.word_gap_samples + 2 * C2.frame_gap_samples;
+const MIN_OPEN_SAMPLES = FRAME_SAMPLES + QUIET_BLOCKS * GATE_BLOCK;
 const HALF_FILTER = 32;
 const TRACE_LIMIT = RECEIVE_MS * C2.sample_rate / (1000 * GATE_BLOCK);
 
@@ -71,7 +75,7 @@ export class C2Capture {
         this.stats = {firstFrame: null, nextFrame: null, inputSamples: 0, outputSamples: 0,
             missing: 0, overlap: 0, clip: 0, peak: 0, blocks: 0, candidate: null, segmentation: null,
             rmsTrace: {blockMs: 1000 * GATE_BLOCK / C2.sample_rate, gateRms: GATE_RMS,
-                closeAfterQuietBlocks: QUIET_BLOCKS, limit: TRACE_LIMIT,
+                closeAfterQuietBlocks: QUIET_BLOCKS, minOpenMs: 1000 * MIN_OPEN_SAMPLES / C2.sample_rate, limit: TRACE_LIMIT,
                 columns: ["start48k", "rms", "active", "decision", "quietBlocks"],
                 blocks: [], omittedBlocks: 0}};
         this.historySize = 0;
@@ -153,9 +157,10 @@ export class C2Capture {
         this.signalSize += GATE_BLOCK;
         if (active) this.lastActiveBlock = blockStart;
         this.quiet = active ? 0 : this.quiet + 1;
-        const closing = this.quiet >= QUIET_BLOCKS;
+        const quietEnough = this.quiet >= QUIET_BLOCKS;
+        const closing = quietEnough && this.consumed - this.gateOpenedAt >= MIN_OPEN_SAMPLES;
         this.traceBlock(blockStart, power, active,
-            opening ? "open" : closing ? "close" : active ? "active" : "quiet", this.quiet);
+            opening ? "open" : closing ? "close" : quietEnough ? "hold" : active ? "active" : "quiet", this.quiet);
         if (!closing) return null;
         return this.finishCandidate();
     }
