@@ -179,22 +179,34 @@ export class C2Capture {
         let peak = 0;
         for (const sample of observed) peak = Math.max(peak, Math.abs(sample));
         const cutoff = peak * C2.detector_thresholds.silence_ratio;
-        let first = 0;
-        let last = observed.length - 1;
-        while (first < observed.length && Math.abs(observed[first]) <= cutoff) first++;
-        while (last >= 0 && Math.abs(observed[last]) <= cutoff) last--;
-        const start = first - C2.frame_gap_samples;
-        const end = last + 1 + C2.frame_gap_samples;
-        const insufficientLeading = start < 0;
-        const insufficientTrailing = end > observed.length;
-        const reason = first > last ? "NO_PEAK_CROSSING"
-            : insufficientLeading && insufficientTrailing ? "BOTH_GUARDS_SHORT"
-            : insufficientLeading ? "LEADING_GUARD_SHORT"
-            : insufficientTrailing ? "TRAILING_GUARD_SHORT" : null;
+        const guard = C2.frame_gap_samples;
+        const openBlockEnd = this.gateOpenedAt - this.signalOrigin + GATE_BLOCK;
+        const lastActiveBlockStart = this.lastActiveBlock - this.signalOrigin;
+        let runStart = 0;
+        let leading = null;
+        let trailing = null;
+        for (let i = 0; i <= observed.length; i++) {
+            if (i < observed.length && Math.abs(observed[i]) <= cutoff) continue;
+            if (i - runStart >= guard) {
+                if (i <= openBlockEnd) leading = [runStart, i];
+                if (runStart >= lastActiveBlockStart && trailing === null) trailing = [runStart, i];
+            }
+            runStart = i + 1;
+        }
+        const start = leading === null ? null : leading[1] - guard;
+        const end = trailing === null ? null : trailing[0] + guard;
+        const reason = !leading && !trailing ? "BOTH_GUARDS_SHORT"
+            : !leading ? "LEADING_GUARD_SHORT"
+            : !trailing ? "TRAILING_GUARD_SHORT"
+            : leading[1] >= trailing[0] ? "INVALID_GUARD_ORDER" : null;
         this.stats.segmentation = {
             reason, gateOpened48k: this.gateOpenedAt, lastActiveBlock48k: this.lastActiveBlock,
             bufferStart48k: this.signalOrigin, bufferEnd48k: this.signalOrigin + observed.length,
-            leadingSamples: first, trailingSamples: observed.length - last - 1,
+            guardSelection: "contiguous_c2_quiet_runs",
+            leadingSamples: leading ? leading[1] - leading[0] : 0,
+            trailingSamples: trailing ? trailing[1] - trailing[0] : 0,
+            leadingRun48k: leading?.map(index => this.signalOrigin + index) ?? null,
+            trailingRun48k: trailing?.map(index => this.signalOrigin + index) ?? null,
             requiredGuardSamples: C2.frame_gap_samples, peak, peakCutoff: cutoff,
             gateRms: GATE_RMS, quietBlocks: this.quiet,
         };
