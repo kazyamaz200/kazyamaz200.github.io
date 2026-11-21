@@ -70,9 +70,8 @@ export function measureC2Pitch(samples, start, end) {
     return {energy, scores, best, second, pitch: order[0]};
 }
 
-function detectPitch(samples, start, end, diagnostic) {
+function detectPitch(samples, start, end, thresholds, diagnostic) {
     const {energy, best, second, pitch} = measureC2Pitch(samples, start, end);
-    const thresholds = C2.detector_thresholds;
     if (diagnostic) Object.assign(diagnostic, {
         windowStart: start, windowEnd: end, energy,
         bestPitch: pitch, bestEnergy: best, secondEnergy: second,
@@ -88,9 +87,9 @@ function detectPitch(samples, start, end, diagnostic) {
     return null;
 }
 
-export function detectC2Events(samples, sampleRate, diagnostic) {
+export function detectC2Events(samples, sampleRate, diagnostic, thresholds = C2.detector_thresholds) {
     if (diagnostic) Object.assign(diagnostic, {id: "w12-codec-checks", noteChecks: [], restChecks: [],
-        thresholds: C2.detector_thresholds, failure: null, completed: false});
+        thresholds, failure: null, completed: false});
     const fail = (code, condition = "INPUT_VALIDATION", detail = {}) => {
         if (diagnostic) diagnostic.failure = {code, condition, ...detail};
         return reject("Sound.detect", code);
@@ -107,7 +106,6 @@ export function detectC2Events(samples, sampleRate, diagnostic) {
     }
     if (peak === 0) return fail("AUDIO_UNDECODABLE");
 
-    const thresholds = C2.detector_thresholds;
     const cutoff = thresholds.silence_ratio * peak;
     const minimum = roundSamples(C2.note_samples * thresholds.minimum_silence_note_fraction);
     if (diagnostic) Object.assign(diagnostic, {peak, cutoff, minimumQuietRun: minimum});
@@ -140,7 +138,7 @@ export function detectC2Events(samples, sampleRate, diagnostic) {
             if (diagnostic) diagnostic.noteChecks.push(note);
             if (!close(length, C2.note_samples)) return fail("AUDIO_UNDECODABLE", "NOTE_DURATION", {region: index});
             const pitch = detectPitch(samples, cursor + roundSamples(length / 10),
-                cursor + roundSamples(9 * length / 10), note);
+                cursor + roundSamples(9 * length / 10), thresholds, note);
             if (pitch === null) return fail("AUDIO_UNDECODABLE", "PITCH_CONFIDENCE", {region: index});
             events.push({pitch});
         }
@@ -216,15 +214,17 @@ function parseMeaning(body) {
     return {ok: true, meaning: Object.fromEntries(roles.map(([key], index) => [key, body[index]]))};
 }
 
-export function decodeC2Detailed(samples, sampleRate, {receiver, peer} = {}, diagnostic) {
-    const sound = detectC2Events(samples, sampleRate, diagnostic);
-    if (!sound.ok) return sound;
-    const frame = decodeFrame(sound.events, receiver, peer);
+export function decodeC2EventFrame(events, {receiver, peer} = {}) {
+    const frame = decodeFrame(events, receiver, peer);
     if (!frame.ok) return frame;
     const language = parseMeaning(frame.body);
     if (!language.ok) return language;
-    return {ok: true, header: frame.header, meaning: language.meaning,
-        words: frame.words, events: sound.events};
+    return {ok: true, header: frame.header, meaning: language.meaning, words: frame.words, events};
+}
+
+export function decodeC2Detailed(samples, sampleRate, endpoints, diagnostic) {
+    const sound = detectC2Events(samples, sampleRate, diagnostic);
+    return sound.ok ? decodeC2EventFrame(sound.events, endpoints) : sound;
 }
 
 export function decodeC2(samples, sampleRate, endpoints, diagnostic) {

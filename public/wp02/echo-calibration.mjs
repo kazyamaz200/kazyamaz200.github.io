@@ -46,7 +46,7 @@ function fft(real, imag, inverse = false) {
     }
 }
 
-function impulseResponse(input, probe) {
+function impulseResponse(input, probe, analysisBand) {
     const size = 2 ** Math.ceil(Math.log2(input.length + probe.length));
     const real = new Float64Array(size);
     const imag = new Float64Array(size);
@@ -58,6 +58,14 @@ function impulseResponse(input, probe) {
     fft(pr, pi);
     const regularization = 0.001 * probe.reduce((sum, x) => sum + x * x, 0);
     for (let i = 0; i < size; i++) {
+        if (analysisBand) {
+            const frequency = Math.min(i, size - i) * RATE / size;
+            if (frequency < analysisBand.lowHz || frequency > analysisBand.highHz) {
+                real[i] = 0;
+                imag[i] = 0;
+                continue;
+            }
+        }
         // Regularized inverse of the probe. Weak spectral bins cannot
         // amplify the microphone noise without bound.
         const power = pr[i] * pr[i] + pi[i] * pi[i] + regularization;
@@ -69,11 +77,10 @@ function impulseResponse(input, probe) {
     return real.subarray(0, input.length - probe.length + 1);
 }
 
-export function estimateEcho(input) {
+export function estimateEcho(input, {probe = calibrationProbe(), analysisBand, assessNearEcho} = {}) {
     const fail = (reason, detail = {}) => ({ok: false, reason, ...detail});
-    const probe = calibrationProbe();
     if (input.length < RATE / 2 || input.length > RATE * 5) return fail("CAPTURE_LENGTH");
-    const response = impulseResponse(input, probe);
+    const response = impulseResponse(input, probe, analysisBand);
     let peak = 0;
     let peakIndex = 0;
     for (let i = 0; i < response.length; i++) {
@@ -114,7 +121,12 @@ export function estimateEcho(input) {
     let background = 0;
     for (let i = 0; i < peakIndex - DIRECT_WINDOW; i++) background = Math.max(background, Math.abs(response[i]));
     if (background > peak * 0.45) return fail("DIRECT_ARRIVAL_AMBIGUOUS", detail);
-    return {ok: true, delaySamples: best.delaySamples, gain: best.gain, fit: best.fit};
+    const nearby = assessNearEcho?.(response, peakIndex, best.delaySamples);
+    if (nearby && nearby.improvement > 0.55 && nearby.explainedEnergyGain > 0.10) {
+        return fail("NEAR_REFLECTION_AMBIGUOUS", {...detail, nearby});
+    }
+    return {ok: true, delaySamples: best.delaySamples, gain: best.gain, fit: best.fit,
+        ...(nearby && {nearby})};
 }
 
 export function combineEchoMeasurements(attempts) {

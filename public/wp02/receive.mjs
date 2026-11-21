@@ -1,4 +1,5 @@
 import {C2Capture, CaptureError, RECEIVE_MS, stopCapture} from "./capture-adapter.mjs";
+import {TimedCapture} from "./timed-capture.mjs";
 
 const audio = Object.freeze({echoCancellation: false, autoGainControl: false,
     noiseSuppression: false, channelCount: {ideal: 1}});
@@ -10,6 +11,11 @@ export async function mount({action, begin, update, record}) {
     }
     const query = new URLSearchParams(location.search);
     const preprocessing = query.get("preprocess");
+    const decoder = query.get("decoder") ?? "legacy";
+    if (!["legacy", "w24"].includes(decoder) || (decoder === "w24" && preprocessing !== null)) {
+        throw new Error("INCOMPATIBLE_DECODER_OPTIONS");
+    }
+    const timed = decoder === "w24";
     const echo = preprocessing === "echo" ? {
         delaySamples: Number(query.get("delaySamples")), gain: Number(query.get("gain")),
     } : null;
@@ -19,15 +25,16 @@ export async function mount({action, begin, update, record}) {
     if (!asset.ok) throw new Error("WORKLET_ASSET_UNAVAILABLE");
     const workletURL = URL.createObjectURL(new Blob([await asset.text()], {type: "text/javascript"}));
     let active = null;
-    const arm = action(echo ? "受信開始（単一反射補正・実験）" : tonal ? "受信開始（定常音抑制・実験）" : bandpass ? "受信開始（帯域通過・実験）" : "受信開始", armReceiver);
+    const arm = action(timed ? "受信開始（W24試作）" : echo ? "受信開始（単一反射補正・実験）" : tonal ? "受信開始（定常音抑制・実験）" : bandpass ? "受信開始（帯域通過・実験）" : "受信開始", armReceiver);
     const cancel = action("収録停止", () => active?.finish("Failed", "CANCELLED"));
     cancel.disabled = true;
-    update("準備済み。必要ならネットワークを切り、受信を開始してください。");
+    update(timed ? "準備済み（W24試作）。必要な通信遮断後に受信を開始してください。"
+        : "準備済み。必要ならネットワークを切り、受信を開始してください。");
 
     async function armReceiver() {
         if (active) return;
         const started = performance.now();
-        const report = {...begin(), preprocessing: echo ? "w16-single-echo" : tonal ? "w14-stationary-tone" : bandpass ? "w10-fir-300-1150" : "w09-direct", requestedAudio: audio, processorSettings: null, status: "Arming"};
+        const report = {...begin(), decoder, preprocessing: timed ? "none" : echo ? "w16-single-echo" : tonal ? "w14-stationary-tone" : bandpass ? "w10-fir-300-1150" : "w09-direct", requestedAudio: audio, processorSettings: null, status: "Arming"};
         const session = {report, started, adapter: null, initialized: false, ready: false,
             cpuMs: 0, maxBlockMs: 0, maxClip: 0, maxPeak: 0};
         let timer;
@@ -92,7 +99,8 @@ export async function mount({action, begin, update, record}) {
             report.resampleRatio = 48000 / session.context.sampleRate;
             track.addEventListener("ended", ended, {once: true});
             track.addEventListener("mute", ended, {once: true});
-            session.adapter = new C2Capture(session.context.sampleRate, {bandpass, tonal, echo});
+            session.adapter = timed ? new TimedCapture(session.context.sampleRate)
+                : new C2Capture(session.context.sampleRate, {bandpass, tonal, echo});
             await session.context.audioWorklet.addModule(workletURL);
             if (finishing) return;
             session.source = session.context.createMediaStreamSource(stream);
@@ -124,10 +132,10 @@ export async function mount({action, begin, update, record}) {
                 if (result) {
                     return session.finish(result.ok ? "Displayed" : "Failed", result.code, result);
                 }
-                if (!session.ready && session.adapter.stats.outputSamples >= 12000) {
+                if (!session.ready && (timed ? session.adapter.ready : session.adapter.stats.outputSamples >= 12000)) {
                     session.ready = true;
                     report.readyUtc = new Date().toISOString();
-                    update("収録中 · 送信できます");
+                    update(timed ? "収録中 · すぐに送信してください（W24試作）" : "収録中 · 送信できます");
                 }
             };
             session.context.onstatechange = () => {
