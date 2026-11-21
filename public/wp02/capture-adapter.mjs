@@ -228,7 +228,8 @@ export class C2Capture {
         this.finished = true;
         // The same M01 envelope has logical speaker A and receiver B in either
         // physical phone direction. Only endpoint configuration enters the decoder.
-        return decodeC2(samples, C2.sample_rate, {receiver: "B", peer: "A"});
+        this.stats.codecDiagnostic = {};
+        return decodeC2(samples, C2.sample_rate, {receiver: "B", peer: "A"}, this.stats.codecDiagnostic);
     }
 
     timeoutCode() {
