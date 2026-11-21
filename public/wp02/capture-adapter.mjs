@@ -5,7 +5,7 @@ import {compareSignals} from "./signal-diagnostics.mjs";
 export const RECEIVE_MS = 20000;
 export const MAX_PCM = 10 * C2.sample_rate;
 const GATE_BLOCK = 480;
-const PREROLL = 12000;
+const PREROLL = 24000;
 const QUIET_BLOCKS = 24;
 const GATE_RMS = 0.003;
 // A transient quiet run within a weak frame must not terminate capture.
@@ -209,6 +209,7 @@ export class C2Capture {
             : !trailing ? "TRAILING_GUARD_SHORT"
             : leading[1] >= trailing[0] ? "INVALID_GUARD_ORDER" : null;
         this.stats.segmentation = {
+            retainedHistoryMs: 1000 * PREROLL / C2.sample_rate,
             reason, preprocessing: this.bandpass ? BANDPASS : null, gateOpened48k: this.gateOpenedAt, lastActiveBlock48k: this.lastActiveBlock,
             bufferStart48k: origin, bufferEnd48k: origin + observed.length,
             guardSelection: "contiguous_c2_quiet_runs",
