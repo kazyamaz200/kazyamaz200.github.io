@@ -40,7 +40,11 @@ download.addEventListener("click", () => {
 });
 
 try {
-    if (mode === "rx" || mode === "tx") {
+    if (mode === "cal-rx" || mode === "cal-tx") {
+        if (!isSecureContext) throw new Error("HTTPSで開いてください。");
+        const module = await import("./calibrate.mjs");
+        await module.mount({action, begin, update, record}, mode);
+    } else if (mode === "rx" || mode === "tx") {
         if (!isSecureContext) throw new Error("HTTPSで開いてください。");
         const module = mode === "rx" ? await import("./receive.mjs") : await import("./transmit.mjs");
         await module.mount({action, begin, update, record});
