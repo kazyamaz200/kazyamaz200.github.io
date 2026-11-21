@@ -202,21 +202,44 @@ export class C2Capture {
         let runStart = 0;
         let leading = null;
         let trailing = null;
+        const quietRuns = [];
+        const minimumQuiet = Math.floor(C2.note_samples
+            * C2.detector_thresholds.minimum_silence_note_fraction + 0.5);
+        const tolerance = C2.detector_thresholds.duration_tolerance;
+        const minimumGuard = Math.ceil(guard * (1 - tolerance));
         for (let i = 0; i <= observed.length; i++) {
             if (i < observed.length && Math.abs(observed[i]) <= cutoff) continue;
+            if (i - runStart >= minimumQuiet) quietRuns.push([runStart, i]);
             if (i - runStart >= guard) {
                 if (i <= openBlockEnd) leading = [runStart, i];
                 if (runStart >= lastActiveBlockStart && trailing === null) trailing = [runStart, i];
             }
             runStart = i + 1;
         }
-        const start = leading === null ? null : leading[1] - guard;
+        // Examine actual runs near the gate, allowing exactly the old Codec's
+        // duration tolerance. A short spurious sound may precede the real frame.
+        const onsets = [];
+        for (let index = 0; index + 1 < quietRuns.length; index++) {
+            const run = quietRuns[index];
+            if (run[1] - run[0] < minimumGuard || run[1] > openBlockEnd + guard) continue;
+            const noteLength = quietRuns[index + 1][0] - run[1];
+            onsets.push({run, noteLength,
+                valid: Math.abs(noteLength - C2.note_samples) <= tolerance * C2.note_samples});
+        }
+        const validOnsets = onsets.filter(onset => onset.valid);
+        if (validOnsets.length === 1) leading = validOnsets[0].run;
+        const start = leading === null ? null : leading[1] - Math.min(guard, leading[1] - leading[0]);
         const end = trailing === null ? null : trailing[0] + guard;
-        const reason = !leading && !trailing ? "BOTH_GUARDS_SHORT"
+        const reason = validOnsets.length > 1 ? "AMBIGUOUS_ONSET" : !leading && !trailing ? "BOTH_GUARDS_SHORT"
             : !leading ? "LEADING_GUARD_SHORT"
             : !trailing ? "TRAILING_GUARD_SHORT"
             : leading[1] >= trailing[0] ? "INVALID_GUARD_ORDER" : null;
         this.stats.segmentation = {
+            onsetSelection: validOnsets.length === 1 ? "unique_valid_note" : "original_guard",
+            onsetCandidates: onsets.map(onset => ({guardStart48k: origin + onset.run[0],
+                guardEnd48k: origin + onset.run[1], guardSamples: onset.run[1] - onset.run[0],
+                noteSamples: onset.noteLength, durationPassed: onset.valid})),
+            minimumGuardSamples: minimumGuard,
             retainedHistoryMs: 1000 * PREROLL / C2.sample_rate,
             reason, preprocessing: this.bandpass ? BANDPASS : null, gateOpened48k: this.gateOpenedAt, lastActiveBlock48k: this.lastActiveBlock,
             bufferStart48k: origin, bufferEnd48k: origin + observed.length,
