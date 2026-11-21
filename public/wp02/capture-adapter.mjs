@@ -1,6 +1,7 @@
 import {C2, decodeC2} from "../c2-receiver.mjs";
 import {BANDPASS, bandpassCandidate} from "./bandpass.mjs";
 import {suppressStationaryTone} from "./tonal-suppression.mjs";
+import {suppressEcho} from "./echo-suppression.mjs";
 import {compareSignals} from "./signal-diagnostics.mjs";
 
 export const RECEIVE_MS = 20000;
@@ -69,8 +70,14 @@ export class Resample48k {
 }
 
 export class C2Capture {
-    constructor(rate, {bandpass = false, tonal = false} = {}) {
-        this.bandpass = bandpass || tonal;
+    constructor(rate, {bandpass = false, tonal = false, echo = null} = {}) {
+        if (echo && (!Number.isInteger(echo.delaySamples) || echo.delaySamples < 1
+            || echo.delaySamples > 2400 || !Number.isFinite(echo.gain) || Math.abs(echo.gain) > 0.3
+            || echo.gain === 0)) {
+            throw new CaptureError("INVALID_ECHO_PARAMETERS");
+        }
+        this.echo = echo;
+        this.bandpass = bandpass || tonal || echo !== null;
         this.tonal = tonal;
         this.rate = rate;
         this.resampler = new Resample48k(rate);
@@ -192,13 +199,20 @@ export class C2Capture {
             observed = suppression.values;
             this.stats.tonalSuppression = suppression.metadata;
         }
-        const origin = this.signalOrigin + (this.bandpass ? BANDPASS.edgeSamples : 0);
+        let origin = this.signalOrigin + (this.bandpass ? BANDPASS.edgeSamples : 0);
+        if (this.echo) {
+            const {delaySamples, gain} = this.echo;
+            const corrected = suppressEcho(observed, delaySamples, gain);
+            observed = corrected.values;
+            origin += corrected.discardedSamples;
+            this.stats.echoSuppression = {delaySamples, gain, discardedSamples: corrected.discardedSamples};
+        }
         let peak = 0;
         for (const sample of observed) peak = Math.max(peak, Math.abs(sample));
         const cutoff = peak * C2.detector_thresholds.silence_ratio;
         const guard = C2.frame_gap_samples;
         const openBlockEnd = this.gateOpenedAt - origin + GATE_BLOCK;
-        const lastActiveBlockStart = this.lastActiveBlock - origin;
+        const lastActiveBlockStart = this.lastActiveBlock - origin - (this.echo?.delaySamples ?? 0);
         let runStart = 0;
         let leading = null;
         let trailing = null;
