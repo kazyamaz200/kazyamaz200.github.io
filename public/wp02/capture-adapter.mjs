@@ -1,5 +1,6 @@
 import {C2, decodeC2} from "../c2-receiver.mjs";
 import {BANDPASS, bandpassCandidate} from "./bandpass.mjs";
+import {compareSignals} from "./signal-diagnostics.mjs";
 
 export const RECEIVE_MS = 20000;
 export const MAX_PCM = 10 * C2.sample_rate;
@@ -178,7 +179,11 @@ export class C2Capture {
 
     finishCandidate() {
         const captured = this.signal.subarray(0, this.signalSize);
-        const observed = this.bandpass ? bandpassCandidate(captured) : captured;
+        const filtered = bandpassCandidate(captured);
+        const aligned = captured.subarray(BANDPASS.edgeSamples, captured.length - BANDPASS.edgeSamples);
+        this.stats.filterComparison = compareSignals(aligned, filtered,
+            this.signalOrigin + BANDPASS.edgeSamples, this.gateOpenedAt, this.lastActiveBlock);
+        const observed = this.bandpass ? filtered : captured;
         const origin = this.signalOrigin + (this.bandpass ? BANDPASS.edgeSamples : 0);
         let peak = 0;
         for (const sample of observed) peak = Math.max(peak, Math.abs(sample));
