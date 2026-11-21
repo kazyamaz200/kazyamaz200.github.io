@@ -1,5 +1,6 @@
 import {C2, decodeC2} from "../c2-receiver.mjs";
 import {BANDPASS, bandpassCandidate} from "./bandpass.mjs";
+import {suppressStationaryTone} from "./tonal-suppression.mjs";
 import {compareSignals} from "./signal-diagnostics.mjs";
 
 export const RECEIVE_MS = 20000;
@@ -68,8 +69,9 @@ export class Resample48k {
 }
 
 export class C2Capture {
-    constructor(rate, {bandpass = false} = {}) {
-        this.bandpass = bandpass;
+    constructor(rate, {bandpass = false, tonal = false} = {}) {
+        this.bandpass = bandpass || tonal;
+        this.tonal = tonal;
         this.rate = rate;
         this.resampler = new Resample48k(rate);
         this.history = new Float64Array(PREROLL);
@@ -183,7 +185,13 @@ export class C2Capture {
         const aligned = captured.subarray(BANDPASS.edgeSamples, captured.length - BANDPASS.edgeSamples);
         this.stats.filterComparison = compareSignals(aligned, filtered,
             this.signalOrigin + BANDPASS.edgeSamples, this.gateOpenedAt, this.lastActiveBlock);
-        const observed = this.bandpass ? filtered : captured;
+        let observed = this.bandpass ? filtered : captured;
+        if (this.tonal) {
+            const available = this.gateOpenedAt - this.signalOrigin - BANDPASS.edgeSamples;
+            const suppression = suppressStationaryTone(filtered, available);
+            observed = suppression.values;
+            this.stats.tonalSuppression = suppression.metadata;
+        }
         const origin = this.signalOrigin + (this.bandpass ? BANDPASS.edgeSamples : 0);
         let peak = 0;
         for (const sample of observed) peak = Math.max(peak, Math.abs(sample));
