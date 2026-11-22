@@ -14,6 +14,7 @@ jobs:
       PUBLIC_MLPA_API_URL: ${{ vars.MLPA_API_URL }}
       PUBLIC_MLPA_ACCEPTING_RESPONSES: ${{ vars.MLPA_ACCEPTING_RESPONSES }}
       PUBLIC_MLPA_CONSENT_VERSION: ${{ vars.MLPA_CONSENT_VERSION }}
+      PUBLIC_MLPA_NATURALNESS_API_URL: ${{ vars.MLPA_NATURALNESS_API_URL }}
     steps:
       - uses: actions/checkout@v7
       - uses: withastro/action@v6

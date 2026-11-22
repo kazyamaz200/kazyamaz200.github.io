@@ -25,6 +25,8 @@ export default defineConfig({
       filter: page =>
         !page.endsWith("/mlpa-listening/") &&
         !page.endsWith("/mlpa-listening") &&
+        !page.endsWith("/mlpa-naturalness/") &&
+        !page.endsWith("/mlpa-naturalness") &&
         (config.features?.showArchives !== false ||
           !page.endsWith("/archives/")),
     }),
